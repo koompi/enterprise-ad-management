@@ -1,0 +1,12 @@
+# Maintainer: Heng Hongsea <hongsea@koompi.org>
+pkgname=enterprise-tool
+pkgver=0.1.202000
+pkgrel=0
+arch=('any')
+source=("enerprise-tool-2020000.tar.gz")
+sha256sums=('b73cbb2c163196b7b81e57180263ec2a2f7a3c6990098f9fb5f54b90e2350098')
+package(){
+    mkdir -p ${pkgdir}/usr/bin
+    cp -r ${srcdir}/enerprise-tool/manageuser "${pkgdir}/usr/bin"
+    cp -r ${srcdir}/enerprise-tool/usercontrol "${pkgdir}/usr/bin"
+}
