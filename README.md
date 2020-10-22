@@ -4,7 +4,7 @@
 
 ### To use the script,
 
-``console
+```console
 cd bin
 sudo ./main
 ```
