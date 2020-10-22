@@ -1,1 +1,10 @@
 #!/bin/bash
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+announce "Error 404" "<<UNDER CONSTRUCTION>>"

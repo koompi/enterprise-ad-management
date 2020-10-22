@@ -1,1 +1,14 @@
 #!/bin/bash
+
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+announce "KOOMPI Enterprise Active Directory Domain Controller Management System Help" "Welcome to \
+KOOMPI Enterprise Active Directory Domain Controller Management System where administrator can\
+create, remove, search, control Users, Groups, Organization Units. For any Error and bugs, please \
+contact developers at https://github.com/koompi/kmp-apps"
