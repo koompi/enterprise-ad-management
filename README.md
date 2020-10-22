@@ -5,6 +5,6 @@
 ### To use the script,
 
 ```console
-cd bin
+cd kmp-apps/bin
 sudo ./main
 ```
