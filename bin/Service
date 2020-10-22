@@ -1,0 +1,106 @@
+#!/bin/bash
+
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+selectservice(){
+
+    local serviceopt=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Samba Serices Management Dashboard ]" \
+    --menu "\nThis is a list of Current Service Related to Active Directory Server. Please Choose an options\n\n" \
+    20 100 4 \
+    "1" "SAMBA      :   Samba AD Daemon" \
+    "2" "NTPD       :   Network Time Service Daemon" \
+    "3" "NAMED      :   Internet domain name server Daemon"\
+    3>&1 1>&2 2>&3)
+
+    case $serviceopt in
+    1)  echo "samba"
+        ;;
+    2)  echo "ntpd"
+        ;;
+    3)  echo "named"
+        ;;
+    *)  continue
+        ;;
+    esac
+}
+
+startservice(){
+
+    local selectedservice=$(selectservice)
+
+    sudo systemctl start $selectedservice
+
+}
+
+stopservice(){
+
+    local selectedservice=$(selectservice)
+
+    sudo systemctl stop $selectedservice
+
+}
+
+restartservice(){
+
+    local selectedservice=$(selectservice)
+
+    sudo systemctl restart $selectedservice
+}
+
+printservice(){
+
+    local selectedservice=$(selectservice)
+
+    sudo systemctl status $selectedservice | tee print.txt
+
+    announce "Service Status: $selectedservice" "$(cat print.txt)"
+
+    rm -rf print.txt
+}
+
+main(){
+
+    while true;
+    do
+
+        local serviceopt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ Samba Serices Management Dashboard ]" \
+        --menu "\nThis is for Samba Serices Management where services can be Start, Stop, Restart, Query for Status. Please Choose an options\n" \
+        20 100 5 \
+        "1" "Start Services     :   Start Either SMB, NMB, WINBIND, NTP, BIND" \
+        "2" "Stop Services      :   Stop Either SMB, NMB, WINBIND, NTP, BIND" \
+        "3" "Restart Services   :   Restart Either SMB, NMB, WINBIND, NTP, BIND"  \
+        "4" "Print Status       :   Print Either SMB, NMB, WINBIND, NTP, BIND Statuses" \
+        "5" "Exit               :   Return Back to Main Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $serviceopt in
+
+        "1")    startservice
+                ;;
+        "2")    stopservice
+                ;; 
+        "3")    restartservice
+                ;; 
+        "4")    printservice
+                ;;
+        "5")    break
+                ;;                                                
+        *)      continue
+                ;;
+        esac
+
+    done
+
+}
+
+main

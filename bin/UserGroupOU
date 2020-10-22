@@ -1,0 +1,522 @@
+#!/bin/bash -e
+
+inputbox(){
+    local name=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 $2 ]" \
+    --inputbox "\nPlease enter the name for your $1 $2 Operation\n" \
+    8 80 3>&1 1>&2 2>&3)
+    echo "$name"
+}
+
+passwordbox(){
+    local passwd=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1: $2 ]" \
+    --passwordbox "\n$3\n" \
+    10 80  3>&1 1>&2 2>&3)
+    echo "$passwd"
+}
+
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+
+createuser(){
+
+    local firstname=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Firstname ]" \
+    --inputbox "\nPlease enter the Firstname for your Creating User Operation.\nIf Empty, NULL will be given\n" \
+    10 80 3>&1 1>&2 2>&3)
+
+    local surname=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Surname ]" \
+    --inputbox "\nPlease enter the Surname for your Creating User Operation.\nIf Empty, NULL will be given\n" \
+    10 80 3>&1 1>&2 2>&3)
+
+    local jobtitle=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: JobTitle ]" \
+    --inputbox "\nPlease enter a jobtitle for your Creating User Operation.\nIf Empty, NULL will be given\n" \
+    10 80 3>&1 1>&2 2>&3)
+    
+    local emailaddress=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Email ]" \
+    --inputbox "\nPlease enter an Email for your Creating User Operation.\nIf Empty, NULL will be given\n" \
+    10 80 3>&1 1>&2 2>&3)
+
+    local description=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Description ]" \
+    --inputbox "\nPlease enter any extra Description for your Creating User Operation.\nIf Empty, NULL will be given\n" \
+    10 80 3>&1 1>&2 2>&3)
+
+    while true;
+    do
+
+        # local passwd=$(whiptail --clear \
+        # --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        # --title "[ Create User: Password ]" \
+        # --passwordbox "\nPlease enter your password for new user.\nIf Empty, You will be ask to input again.\n" \
+        # 10 80  3>&1 1>&2 2>&3)
+
+        local passwd=$(passwordbox "Create" "User" "Please enter your password for new user.\nIf Empty, You will be ask to input again.")
+
+        local group=$(TERM=ansi whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ Create User: GROUP ]" \
+        --inputbox "\nPlease enter the group which this user belongs in.\nIf Empty, You will be ask to input again.\n" \
+        10 80 3>&1 1>&2 2>&3)
+
+        if [[ ! -z "$passwd" ]];
+        then
+            if [[ ! -z "$group" ]];
+            then
+                break;
+            fi
+        fi
+
+    done
+
+    if [[ -z "$firstname" ]];
+    then
+        firstname="NULL";
+    fi
+
+    if [[ -z "$surname" ]];
+    then
+        surname="NULL";
+    fi
+
+    if [[ -z "$descriptions" ]];
+    then
+        descriptions="NULL";
+    fi
+
+    if [[ -z "$emailaddress" ]];
+    then
+        emailaddress="NULL";
+    fi
+
+    if [[ -z "$jobtitle" ]];
+    then
+        jobtitle="NULL";
+    fi
+
+    DOMAIN=$(samba-tool domain info 127.0.0.1 | grep Domain | awk -F':' '{printf $2}')
+    DOMAIN=$(echo $DOMAIN | sed -e 's/^[[:space:]]*//')
+
+    sudo samba-tool user create "$1" "$passwd" \
+    --profile-path=\\\\${DOMAIN,,}\\profiles\\"$1" \
+    --script-path=logon.bat --home-drive=G \
+    --home-directory=\\\\${DOMAIN,,}\\"$1" \
+    --given-name="$firstname" --surname="$surname" \
+    --unix-home=/home/${DOMAIN^^}/"$1" \
+    --job-title="$jobtitle" \
+    --mail-address="$emailaddress" \
+    --description="$descriptions"
+    
+    sudo samba-tool group addmembers $group $1
+    sudo samba-tool group addmembers network $1 
+    sudo samba-tool group addmembers video $1
+    sudo samba-tool group addmembers storage $1
+    sudo samba-tool group addmembers lp $1
+    sudo samba-tool group addmembers audio $1
+
+    mkdir -p $SAMBAHOME/$1
+    chown -R $1:$group $SAMBAHOME/$1
+    chmod 700 $SAMBAHOME/$1
+
+    if \
+    (whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Expiration ]" \
+    --yesno "Do you set expiration date to this user" 10 100);
+    then 
+
+        local day=$(TERM=ansi whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ Create User: Expiration ]" \
+        --inputbox "\nHow many day do you want this to expire at?\n If Empty, 30 days will be given" \
+        10 80 3>&1 1>&2 2>&3)
+        if [ ! -z "$day" ]];
+        then
+            day=30
+        fi
+
+        enableexpire $day $1
+    
+    else
+        disableexpire $1
+    fi
+}
+
+creategroup(){
+
+    local ou=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create Group: OU ]" \
+    --inputbox "\nPlease enter the Organization Unit which this Group belongs in.\nIf Empty, You will be ask to input again.\n" \
+    10 80 3>&1 1>&2 2>&3)
+
+    sudo samba-tool group add $1 --groupou=OU=$ou
+
+    groupexist="true"
+
+}
+
+createou(){
+
+    sudo samba-tool ou create OU=$1
+
+    ouexist="true"  
+
+}
+
+
+removeuser(){
+
+    sudo samba-tool user delete $1
+
+}
+
+removegroup(){
+
+    sudo samba-tool group delete $1
+
+}
+
+removeou(){
+
+    sudo samba-tool ou delete OU=$1
+
+}
+
+queryuser(){
+
+    sudo samba-tool user list | grep $1
+}
+
+querygroup(){
+
+    sudo samba-tool group list | grep $1
+
+}
+
+queryou(){
+
+    sudo samba-tool ou list | grep OU=$1
+
+}
+
+enableuser(){
+
+    sudo samba-tool user enable $1
+
+}
+
+disableuser(){
+
+    sudo samba-tool user disable $1
+}
+
+enableexpire(){
+
+    sudo samba-tool user setexpiry --days=$1 $2
+}
+
+disableexpire(){
+
+    sudo samba-tool user setexpiry $1  --noexpiry
+}
+
+resetpassworduser(){
+
+    local passwd=$(passwordbox "Reset Password" "User" "Please enter your new password for the user.\nIf Empty, You will be ask to input again.")
+    local passwdagain=$(passwordbox "Reset Password" "Verify" "Please enter your new password for the user again.")
+    if [[ "$passwd" == "$passwdagain"]];
+    then
+        echo -e "$passwd\n$passwd" | sudo smbpasswd -s -a $1
+    else
+        announce "Error" "Your password doesn't match"
+        resetpassworduser $1
+    fi
+
+}
+
+users(){
+
+    while true;
+    do
+
+        local useropt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ User Management Dashboard ]" \
+        --menu "\nThis is for User Management where User can be Created, Removed and Query. Please Choose an options\n\n" \
+        20 100 9 \
+        "1" "Create User        :   Create AD User" \
+        "2" "Remove User        :   Remove AD User" \
+        "3" "Query User         :   Search for AD User"  \
+        "4" "Enable User        :   Enable AD User" \
+        "5" "Disable User       :   Disable AD User" \
+        "6" "Reset Password     :   Reset AD User Password" \
+        "7" "Expire User        :   Set 30 Expire Date to User" \
+        "8" "Unexpire User      :   Remove Expiration Date from User" \
+        "9" "Exit               :   Return Back to User, Group, OU Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $useropt in
+
+        "1")    local user=$(inputbox Creating User)
+                local check=$(sudo samba-tool user list | grep $user| sed -n "$1{p;q}")
+                if [[ "$groupexist" == "true" ]];5
+                    if [[ "$check" != "$user" ]];
+                    then
+                        createuser $user &&
+                        announce "Success" "User $user has been successfully created" || announce "Error" "User $user has NOT been successfully created"
+                    else
+                        announce "Error" "User $user has already existed"
+                    fi
+                else
+                    announce "Error" "First Group hasn't been created yet."
+                fi
+                ;;
+        "2")    local user=$(inputbox Removing User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    removeuser $user &&
+                    announce "Success" "User $user has been successfully deleted" || announce "Error" "User $user has NOT been successfully deleted"
+                else
+                    announce "Error" "User $user does not exist"
+                fi
+                ;; 
+        "3")    local user=$(inputbox Searching User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    queryuser $user && 
+                    announce "Success" "User $user exists"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
+                ;;
+        "4")    local user=$(inputbox Enabling User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    enableuser $user && 
+                    announce "Success" "User $user has been successfully enabled"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
+                ;;
+        "5")    local user=$(inputbox Disabling User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    disableuser $user && 
+                    announce "Success" "User $user has been successfully disabled"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
+                ;;
+        "6")    local user=$(inputbox Reseting Password User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    resetpassworduser $user && 
+                    announce "Success" "User $user Password has been successfully resetted"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
+                resetpassworduser $user
+                ;;
+        "7")    enableexpire "30" $user
+                ;;
+        "8")    disableexpire $user
+                ;;
+        "9")    break
+                ;;                                                         
+        *)      continue
+                ;;
+        esac
+    done
+
+}
+
+
+groups(){
+
+    while true;
+    do
+
+        local groupopt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ User Management Dashboard ]" \
+        --menu "\nThis is for Group Management where Group can be created, removed and Query. Please Choose an options\n\n" \
+        20 100 4 \
+        "1" "Create Group       :   Create AD Group" \
+        "2" "Remove Group       :   Remove AD Group" \
+        "3" "Query Group        :   Search for AD Group"  \
+        "4" "Exit               :   Return Back to User, Group, OU Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $groupopt in
+
+        "1")    local group=$(inputbox Creating Group)
+                local check=$(sudo samba-tool group list | grep $group | sed -n "$1{p;q}")
+                if [[ "$ouexist" == "true" ]];
+                then
+                    if [[ "$check" != "$group" ]];
+                    then
+                        creategroup $group &&
+                        announce "Success" "Group $group has been successfully created" || announce "Error" "Group $group has NOT been successfully created"
+                    else
+                        announce "Error" "Group $group has already existed"
+                    fi
+                else
+                    announce "Error" "First OU hasn't been created yet."
+                fi
+                ;;
+        "2")    local group=$(inputbox Removing Group)
+                local check=$(sudo samba-tool group list | grep $group | sed -n "$1{p;q}")
+                if [[ "$check" == "$group" ]];
+                then
+                    removegroup $group &&
+                    announce "Success" "Group $group has been  successfully deleted" || announce "Error" "Group $group has NOT been successfully deleted. It could be because the $group has children."
+                else
+                    announce "Error" "Group $group does not exist"
+                fi
+                ;; 
+        "3")    local group=$(inputbox Searching Group)
+                local check=$(sudo samba-tool group list | grep $group | sed -n "$1{p;q}")
+                if [[ "$check" == "$group" ]];
+                then
+                    querygroup $group &&
+                    announce "Success" "Group $group exists"
+                else
+                    announce "Error" "Group $group does not exist"
+                fi
+                ;;
+        "4")    break
+                ;;                                             
+        *)      continue
+                ;;
+        esac
+    done
+
+}
+
+ou(){
+
+    while true;
+    do
+
+        local ouopt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ OU Management Dashboard ]" \
+        --menu "\nThis is for Group Management where OU can be created, removed and Query. Please Choose an options\n\n" \
+        20 100 4 \
+        "1" "Create OU          :   Create AD OU" \
+        "2" "Remove OU          :   Remove AD OU" \
+        "3" "Query OU           :   Search for AD OU"  \
+        "4" "Exit               :   Return Back to User, Group, OU Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $ouopt in
+
+        "1")    local ou=$(inputbox Creating OU)
+                local check=$(sudo samba-tool ou list | grep OU=$ou | sed -n "$1{p;q}" )
+                if [[ "$check" != "OU=$ou" ]];
+                then
+                    createou $ou &&
+                    announce "Success" "OU $ou has been successfully created" || announce "Error" "OU $ou has NOT been successfully created"
+                else
+                    announce "Error" "OU $ou has already existed"
+                fi
+                ;;
+        "2")    local ou=$(inputbox Removing OU)
+                local check=$(sudo samba-tool ou list | grep OU=$ou | sed -n "$1{p;q}")
+                if [[ "$check" == "OU=$ou" ]];
+                then
+                    removeou $ou &&
+                    announce "Success" "OU $ou has been successfully deleted" || announce "Error" "OU $ou has NOT been successfully deleted. It could be because the $ou has children."
+                else
+                    announce "Error" "OU $ou does not exist"
+                fi
+                ;; 
+        "3")    local ou=$(inputbox Searching OU)
+                local check=$(sudo samba-tool ou list | grep OU=$ou | sed -n "$1{p;q}")
+                if [[ "$check" == "OU=$ou" ]];
+                then
+                    queryou $ou &&
+                    announce "Success" "OU $ou exists"
+                else
+                    announce "Error" "OU $ou does not exist"
+                fi
+                ;;
+        "4")    break
+                ;;                                             
+        *)      continue
+                ;;
+        esac
+    done
+
+}
+
+main(){
+
+    local groupcheck=$(sudo samba-tool group list | awk '{if(NR==45) print $0}')
+    if [[ ! -z "$groupcheck" ]];
+    then
+        groupexist="true"
+    fi
+
+    local oucheck=$(sudo samba-tool ou list | awk '{if(NR==2) print $0}')
+    if [[ ! -z "$oucheck" ]];
+    then
+        ouexist="true"
+    fi
+
+    while true;
+    do
+
+        local manageopt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ User, Groups, OU Management Dashboard ]" \
+        --menu "\nThis is for User, Groups, OU Management where they can be created, removed and Query. Please Choose an options\n\n" \
+        20 100 4 \
+        "1" "Users              :   Create, Remove, Enable/Disable, Reset Password Search for AD Users" \
+        "2" "Groups             :   Create, Remove, Search for AD Groups" \
+        "3" "Organization Units :   Create, Remove, Search for AD Organization Units"  \
+        "4" "Exit               :   Return Back to Main Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $manageopt in
+
+        "1")    users
+                ;;
+        "2")    groups
+                ;; 
+        "3")    ou
+                ;;
+        "4")    break
+                ;;                                             
+        *)      continue
+                ;;
+        esac
+
+    done
+
+}
+
+main

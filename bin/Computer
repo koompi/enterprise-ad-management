@@ -1,0 +1,119 @@
+#!/bin/bash
+
+inputbox(){
+    local name=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --inputbox "\n$2\n" \
+    10 80 3>&1 1>&2 2>&3)
+    echo "$name"
+}
+
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+addcomputer(){
+
+    local ou=$(inputbox "Create Computer: OU" "Please Input which OU should the Computer Belongs.")
+
+    sudo samba-tool computer create $1$ --computerou="OU=$ou"
+
+}
+
+movecomputer(){
+
+    local ou=$(inputbox "Create Computer: OU" "Please Input which OU should the Computer Belongs.")
+
+    sudo samba-tool computer move $1$ "OU=$ou"
+
+}
+
+removecomputer(){
+
+    sudo samba-tool computer delete $1$
+
+}
+
+printallcomputer(){
+
+    sudo samba-tool computer list | tee print.txt >> /dev/null
+    announce "Print All: Computer" "$(cat print.txt)"
+
+    rm -rf print.txt
+
+}
+
+main(){
+
+    local oucheck=$(sudo samba-tool ou list | awk '{if(NR==2) print $0}')
+    if [[ -z "$oucheck" ]];
+    then
+        announce "Error" "First OU doesn't exist yet. Please return to Main Dashboard to Create One."
+        exit;
+    fi
+
+    while true;
+    do
+
+        local computeropt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ Computer Management Dashboard ]" \
+        --menu "\nThis is for Computer Management where Computer Can be Added, Removed, and Moved. Please Choose an options\n\n" \
+        20 100 5 \
+        "1" "Add Computer to OU     :   Add one Specific Computer device to an OU" \
+        "2" "Move Computer from OU  :   Move one Specific Computer device to another OU" \
+        "3" "Remove Computer from OU:   Remove one Specific Computer device to an OU"  \
+        "4" "Print all Computers    :   Print all Computer that Joined this domain" \
+        "5" "Exit                   :   Return Back to Main Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $computeropt in
+
+        "1")    local com=$(inputbox "Create Computer: Name" "Please Input a new Computer Name for your new Device.")
+                local check=$(sudo samba-tool computer list | grep $com$)
+                if [[ "$check" != "$com$" ]];
+                then
+                    addcomputer $com &&
+                    announce "Success" "Computer $com has been successfully created" || announce "Error" "Computer $com has NOT been successfully created"
+                else
+                    announce "Error" "Computer $com has already existed"
+                fi
+                ;;
+        "2")    local com=$(inputbox "Move Computer: Name" "Please Input the Computer Name for the Moving Operation.")
+                local check=$(sudo samba-tool computer list | grep $com$)
+                if [[ "$check" == "$com$" ]];
+                then
+                    movecomputer $com &&
+                    announce "Success" "Computer $com has been successfully moved" || announce "Error" "Computer $com has NOT been successfully moved"
+                else
+                    announce "Error" "Computer $com doesn't exist"
+                fi
+                ;; 
+        "3")    local com=$(inputbox "Move Computer: Name" "Please Input the Computer Name for the Deleting Operation.")
+                local check=$(sudo samba-tool computer list | grep $com$)
+                if [[ "$check" == "$com$" ]];
+                then
+                    removecomputer $com &&
+                    announce "Success" "Computer $com has been successfully removed" || announce "Error" "Computer $com has NOT been successfully removed"
+                else
+                    announce "Error" "Computer $com doesn't exist"
+                fi
+                ;; 
+        "4")    printallcomputer
+                ;;
+        "5")    break
+                ;;                                                
+        *)      continue
+                ;;
+        esac
+
+    done
+
+}
+
+main

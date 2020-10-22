@@ -1,0 +1,53 @@
+#!/bin/bash
+
+check_root(){
+
+    if [[ $(id -u) != 0 ]];
+    then 
+        echo -e "${RED}[ FAILED ]${NC} Root Permission Requirement Failed"
+        exit;
+    fi
+
+}
+
+check_root
+
+while true;
+do
+    mainopt=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Main Dashboard ]" \
+    --menu "\nWelcome to KOOMPI Active Directory Domain Controller Mangement System. Please Choose an options\n\n" \
+    20 100 8  \
+    "1" "Manage Users, Group, OU    :   Create, Remove, Search, Manage Users, Groups, and OU" \
+    "2" "Manage Computers           :   Add, Remove, Move Client Computer Between Different OU" \
+    "3" "Mange Storage              :   <<UNDER CONSTRUCTION>>"  \
+    "4" "Global Setting             :   Configure Password Policy" \
+    "5" "Manage Service             :   Start, Stop, Restart, Query Status of AD Related Service" \
+    "6" "Perform Update             :   Update Packages, Services, User Interface" \
+    "7" "Help/About US              :   Seeking Small Guide and About Us Informations" \
+    "8" "Exit                       :   Terminate The Programs and Exit" \
+    3>&1 1>&2 2>&3)
+
+    case "$mainopt" in
+
+	"1")    ./UserGroupOU
+			;;
+	"2")    ./Computer
+			;; 
+	"3")    ./Storage
+			;;
+    "4")    ./General
+            ;;
+	"5")    ./Service
+			;;
+	"6")    ./Update
+			;;
+	"7")    ./Help
+			;;
+	"8")    break
+			;;                                             
+	*)      continue
+			;;
+    esac
+done

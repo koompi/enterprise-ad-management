@@ -1,0 +1,117 @@
+#!/bin/bash
+
+inputbox(){
+    local num=$(whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --inputbox "\n$2\n" \
+    10 80 3>&1 1>&2 2>&3)
+    echo "$num"
+}
+
+announce(){
+    whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ $1 ]" \
+    --msgbox "$2" \
+    15 100
+}
+
+limitlength(){
+
+    local check=$(sudo samba-tool domain passwordsettings show | grep "Minimum password length" | awk -F':' '{printf $2}' | sed -e 's/^[[:space:]]*//')
+    local length=$(inputbox "Minimum Password Length" "Please Input the new Length of the Password String.\nThe old length is set at $check characters.")
+    sudo samba-tool domain passwordsettings set --min-pwd-length=$length &&
+    announce "Success" "Minimum Password Length has been set"
+
+}
+
+complexpass(){
+
+    local check=$(sudo samba-tool domain passwordsettings show | grep "Password complexity" | awk -F':' '{printf $2}' | sed -e 's/^[[:space:]]*//')
+
+    if [[ "$check" == "on" ]];
+    then
+        sudo samba-tool domain passwordsettings set --complexity=off &&
+        announce "Success" "Password Complexity has been deactivated"
+    else
+        sudo samba-tool domain passwordsettings set --complexity=on &&
+        announce "Success" "Password Complexity has been activated"
+    fi
+
+}
+
+plainpass(){
+
+    local check=$(sudo samba-tool domain passwordsettings show | grep "Store plaintext passwords" | awk -F':' '{printf $2}' | sed -e 's/^[[:space:]]*//')
+
+    if [[ "$check" == "on" ]];
+    then
+        sudo samba-tool domain passwordsettings set --store-plaintext=off &&
+        announce "Success" "Store Password in Plaintext has been deactivated"
+    else
+        sudo samba-tool domain passwordsettings set --store-plaintext=on &&
+        announce "Success" "Store Password in Plaintext has been activated"
+    fi
+
+}
+
+historypass(){
+
+    local check=$(sudo samba-tool domain passwordsettings show | grep "Password history length" | awk -F':' '{printf $2}' | sed -e 's/^[[:space:]]*//')
+    local length=$(inputbox "Password History Length" "Please Input the new Length of the Password History.\nThe old length is set at $check characters.")
+    sudo samba-tool domain passwordsettings set --history-length=$length &&
+    announce "Success" "Password History Length has been set"
+
+}
+
+setprint(){
+
+    sudo samba-tool domain passwordsettings show | tee print.txt >> /dev/null
+    announce "General Samba Information" "$(cat print.txt)"
+
+    rm -rf print.txt
+
+}
+
+main(){
+
+    while true;
+    do
+
+        local generalopt=$(whiptail --clear \
+        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+        --title "[ General Samba Management Dashboard ]" \
+        --menu "\nThis is for General Samba Management where Password Policy Can be Configured. Please Choose an options\n\n" \
+        20 100 6 \
+        "1" "Limit Password     :   Set Minimum Password Length for All AD Users" \
+        "2" "Password Complexity:   Turning On or Off the Uses of Complex Password" \
+        "3" "Plaintext Password :   Allow or Deny the Storing of Password in Plaintext"  \
+        "4" "History Password   :   Set How many Old Password the System Can Place in Store"  \
+        "5" "Print              :   Display All the Current Settings"  \
+        "6" "Exit               :   Return Back to Main Dashboard" \
+        3>&1 1>&2 2>&3)
+
+        case $generalopt in
+
+        "1")    limitlength
+                ;;
+        "2")    complexpass
+                ;; 
+        "3")    plainpass
+                ;;
+        "4")    historypass
+                ;;
+        "5")    setprint
+                ;;  
+        "6")    break
+                ;;                                                
+        *)      continue
+                ;;
+        esac
+
+    done
+
+}
+
+main
