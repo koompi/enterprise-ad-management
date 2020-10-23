@@ -242,7 +242,7 @@ resetpassworduser(){
 
     local passwd=$(passwordbox "Reset Password" "User" "Please enter your new password for the user.\nIf Empty, You will be ask to input again.")
     local passwdagain=$(passwordbox "Reset Password" "Verify" "Please enter your new password for the user again.")
-    if [[ "$passwd" == "$passwdagain"]];
+    if [[ "$passwd" == "$passwdagain" ]];
     then
         echo -e "$passwd\n$passwd" | sudo smbpasswd -s -a $1
     else
@@ -277,7 +277,8 @@ users(){
 
         "1")    local user=$(inputbox Creating User)
                 local check=$(sudo samba-tool user list | grep $user| sed -n "$1{p;q}")
-                if [[ "$groupexist" == "true" ]];5
+                if [[ "$groupexist" == "true" ]];
+                then
                     if [[ "$check" != "$user" ]];
                     then
                         createuser $user &&
