@@ -26,7 +26,6 @@ announce(){
     15 100
 }
 
-
 createuser(){
 
     local firstname=$(TERM=ansi whiptail --clear \
@@ -141,19 +140,7 @@ createuser(){
     --title "[ Create User: Expiration ]" \
     --yesno "Do you set expiration date to this user" 10 100);
     then 
-
-        local day=$(TERM=ansi whiptail --clear \
-        --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
-        --title "[ Create User: Expiration ]" \
-        --inputbox "\nHow many day do you want this to expire at?\n If Empty, 30 days will be given" \
-        10 80 3>&1 1>&2 2>&3)
-        if [ ! -z "$day" ]];
-        then
-            day=30
-        fi
-
-        enableexpire $day $1
-    
+        enableexpire $1  
     else
         disableexpire $1
     fi
@@ -230,7 +217,16 @@ disableuser(){
 
 enableexpire(){
 
-    sudo samba-tool user setexpiry --days=$1 $2
+    local day=$(TERM=ansi whiptail --clear \
+    --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
+    --title "[ Create User: Expiration ]" \
+    --inputbox "\nHow many day do you want this to expire at?\n If Empty, 30 days will be given" \
+    10 80 3>&1 1>&2 2>&3)
+    if [[ ! -z "$day" ]];
+    then
+        day=30
+    fi
+    sudo samba-tool user setexpiry --days=$day $1 
 }
 
 disableexpire(){
@@ -339,11 +335,26 @@ users(){
                 else
                     announce "Error" "User $user does not exist"
                 fi
-                resetpassworduser $user
                 ;;
-        "7")    enableexpire "30" $user
+        "7")    local user=$(inputbox Expire User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    enableexpire $user && 
+                    announce "Success" "User $user has been sucessfully unexpired"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
                 ;;
-        "8")    disableexpire $user
+        "8")    local user=$(inputbox Unexpire User)
+                local check=$(sudo samba-tool user list | grep $user | sed -n "$1{p;q}")
+                if [[ "$check" == "$user" ]];
+                then
+                    disableexpire $user && 
+                    announce "Success" "User $user has been sucessfully unexpired"                
+                else
+                    announce "Error" "User $user does not exist"
+                fi
                 ;;
         "9")    break
                 ;;                                                         
@@ -515,9 +526,7 @@ main(){
         *)      continue
                 ;;
         esac
-
     done
-
 }
 
 main
