@@ -115,9 +115,11 @@ createuser(){
 
     sudo samba-tool user create "$1" "$passwd" \
     --profile-path=\\\\${DOMAIN,,}\\profiles\\"$1" \
-    --script-path=logon.bat --home-drive=G \
+    --script-path=logon.bat \
+    --home-drive=G \
     --home-directory=\\\\${DOMAIN,,}\\"$1" \
-    --given-name="$firstname" --surname="$surname" \
+    --given-name="$firstname" \
+    --surname="$surname" \
     --unix-home=/home/${DOMAIN^^}/"$1" \
     --job-title="$jobtitle" \
     --mail-address="$emailaddress" \
