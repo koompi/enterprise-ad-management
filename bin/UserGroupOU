@@ -133,7 +133,7 @@ createuser(){
     sudo samba-tool group addmembers audio $1
 
     mkdir -p $SAMBAHOME/$1
-    chown -R $1:$group $SAMBAHOME/$1
+    chown -R $1:$group $SAMBAHOME/$1    
     chmod 700 $SAMBAHOME/$1
 
     if \
