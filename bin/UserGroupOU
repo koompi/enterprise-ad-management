@@ -132,9 +132,9 @@ createuser(){
     sudo samba-tool group addmembers lp $1
     sudo samba-tool group addmembers audio $1
 
-    mkdir -p $SAMBAHOME/$1
-    chown -R $1:$group $SAMBAHOME/$1    
-    chmod 700 $SAMBAHOME/$1
+    mkdir -p /klab/samba/home/$1
+    chown -R $1:$group /klab/samba/home/$1    
+    chmod 700 /klab/samba/home/$1
 
     if \
     (whiptail --clear \
