@@ -28,31 +28,31 @@ announce(){
 
 createuser(){
 
-    local firstname=$(TERM=ansi whiptail --clear \
+    local firstname=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: Firstname ]" \
     --inputbox "\nPlease enter the Firstname for your Creating User Operation.\nIf Empty, NULL will be given\n" \
     10 80 3>&1 1>&2 2>&3)
 
-    local surname=$(TERM=ansi whiptail --clear \
+    local surname=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: Surname ]" \
     --inputbox "\nPlease enter the Surname for your Creating User Operation.\nIf Empty, NULL will be given\n" \
     10 80 3>&1 1>&2 2>&3)
 
-    local jobtitle=$(TERM=ansi whiptail --clear \
+    local jobtitle=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: JobTitle ]" \
     --inputbox "\nPlease enter a jobtitle for your Creating User Operation.\nIf Empty, NULL will be given\n" \
     10 80 3>&1 1>&2 2>&3)
     
-    local emailaddress=$(TERM=ansi whiptail --clear \
+    local emailaddress=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: Email ]" \
     --inputbox "\nPlease enter an Email for your Creating User Operation.\nIf Empty, NULL will be given\n" \
     10 80 3>&1 1>&2 2>&3)
 
-    local description=$(TERM=ansi whiptail --clear \
+    local description=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: Description ]" \
     --inputbox "\nPlease enter any extra Description for your Creating User Operation.\nIf Empty, NULL will be given\n" \
@@ -69,7 +69,7 @@ createuser(){
 
         local passwd=$(passwordbox "Create" "User" "Please enter your password for new user.\nIf Empty, You will be ask to input again.")
 
-        local group=$(TERM=ansi whiptail --clear \
+        local group=$(whiptail --clear \
         --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
         --title "[ Create User: GROUP ]" \
         --inputbox "\nPlease enter the group which this user belongs in.\nIf Empty, You will be ask to input again.\n" \
@@ -150,7 +150,7 @@ createuser(){
 
 creategroup(){
 
-    local ou=$(TERM=ansi whiptail --clear \
+    local ou=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create Group: OU ]" \
     --inputbox "\nPlease enter the Organization Unit which this Group belongs in.\nIf Empty, You will be ask to input again.\n" \
@@ -219,7 +219,7 @@ disableuser(){
 
 enableexpire(){
 
-    local day=$(TERM=ansi whiptail --clear \
+    local day=$(whiptail --clear \
     --backtitle "KOOMPI Enterprise Active Directory Domain Controller Management System" \
     --title "[ Create User: Expiration ]" \
     --inputbox "\nHow many day do you want this to expire at?\n If Empty, 30 days will be given" \
